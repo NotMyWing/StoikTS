@@ -303,6 +303,24 @@ export function toRPN(input: any): FIFO<TokenTuple> {
 }
 
 /**
+ * Returns a treemap of constituents of given input.
+ * Converts atoms to moleculas, basically.
+ * @param input Atom or molecula.
+ * @returns Atoms.
+ */
+export function getConstituents(input: AtomToken | MoleculeToken) {
+	const [type, value] = input;
+
+	const map = new TreeMap<string, number>();
+
+	// Fill the map with the left side.
+	if (type === TokenType.Molecule) map.setAll(value);
+	else map.set(value, 1);
+
+	return map;
+}
+
+/**
  * Adds or subtracts atoms and molecules one to, or from another.
  *
  * @param lhs Left-hand side operand, atom or molecule.
@@ -315,15 +333,11 @@ export function addOrSubtract(
 	rhs: AtomToken | MoleculeToken,
 	subtract?: boolean,
 ): MoleculeToken {
-	const [leftType, left] = lhs;
+	const [, left] = lhs;
 	const [rightType, right] = rhs;
 
 	// The result is always a molecule.
-	const map = new TreeMap<string, number>();
-
-	// Fill the map with the left side.
-	if (leftType === TokenType.Molecule) map.setAll(left);
-	else map.set(left, 1);
+	const map = getConstituents(lhs);
 
 	// If the right side is an atom, it's just get and set.
 	if (rightType === TokenType.Atom) {
