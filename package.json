@@ -17,7 +17,8 @@
   },
   "scripts": {
     "test": "jest",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "tsc"
   },
   "author": "NotMyWing <winwyv@gmail.com>",
   "contributors": [
@@ -31,6 +32,5 @@
   "version": "0.0.2",
   "name": "stoik",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "prepublish": "tsc"
+  "types": "dist/index.d.ts"
 }
