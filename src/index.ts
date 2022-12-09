@@ -401,14 +401,13 @@ export function evaluate(input: string | FIFO<TokenTuple>): TokenTuple {
 			case TokenType.Coefficient:
 			case TokenType.Subscript:
 			case TokenType.Join:
+				if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected lhs value, got none)");
+				const leftTuple = operandStack.pop() as unknown as AnyOperand;
+				const [leftType, left] = leftTuple;
+
 				if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected rhs value, got none)");
 				const rightTuple = operandStack.pop() as unknown as AnyOperand;
 				const [rightType, right] = rightTuple;
-
-				if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected lhs value, got none)");
-
-				const leftTuple = operandStack.pop() as unknown as AnyOperand;
-				const [leftType, left] = leftTuple;
 
 				// Switch on the type of the operator.
 				switch (type) {
