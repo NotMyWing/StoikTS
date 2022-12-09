@@ -1,0 +1,36 @@
+{
+  "devDependencies": {
+    "@types/jest": "^29.2.4",
+    "@types/node": "^18.11.11",
+    "@typescript-eslint/eslint-plugin": "^5.45.1",
+    "@typescript-eslint/parser": "^5.45.1",
+    "eslint": "^8.29.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-jest-extended": "^2.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "jest": "^29.3.1",
+    "prettier": "^2.8.0",
+    "ts-jest": "^29.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
+  },
+  "scripts": {
+    "test": "jest",
+    "build": "tsc"
+  },
+  "author": "NotMyWing <winwyv@gmail.com>",
+  "contributors": [
+    "Exaxxion <11907282+Exaxxion@users.noreply.github.com>"
+  ],
+  "dependencies": {
+    "fifo": "^2.4.1",
+    "ts-treemap": "^1.1.0"
+  },
+  "license": "LGPLv3",
+  "version": "0.0.1",
+  "name": "stoik",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "prepublish": "tsc"
+}

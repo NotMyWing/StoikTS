@@ -1,0 +1,11 @@
+node_modules
+src
+coverage
+.git
+.vscode
+.eslintignore
+.eslintrc.js
+.gitignore
+.prettierrc.js
+jest.config.js
+tsconfig.json
