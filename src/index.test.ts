@@ -434,13 +434,29 @@ describe(TokenName[TokenType.Add], () => {
 	it("should subtract respecting associativity", () => {
 		const a = evaluate("A - 2A");
 		const b = evaluate("2A - A");
+		const c = evaluate("A - C");
+		const d = evaluate("C - A");
 
 		expect(a).toBeTruthy();
 		expect(b).toBeTruthy();
-		if (!a || !b) return;
+		expect(c).toBeTruthy();
+		expect(d).toBeTruthy();
+		if (!a || !b || !c || !d) return;
 
 		expect(a).not.toEqual(b);
 		expect(a[1]).toEqual(new TreeMap([["A", -1]]));
 		expect(b[1]).toEqual(new TreeMap([["A", 1]]));
+		expect(c[1]).toEqual(
+			new TreeMap([
+				["A", 1],
+				["C", -1],
+			]),
+		);
+		expect(d[1]).toEqual(
+			new TreeMap([
+				["A", -1],
+				["C", 1],
+			]),
+		);
 	});
 });

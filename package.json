@@ -18,7 +18,7 @@
   "scripts": {
     "test": "jest",
     "build": "tsc",
-    "prepublishOnly": "tsc"
+    "prepublishOnly": "jest && tsc"
   },
   "author": "NotMyWing <winwyv@gmail.com>",
   "contributors": [
@@ -29,7 +29,7 @@
     "ts-treemap": "^1.1.0"
   },
   "license": "LGPLv3",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "name": "stoik",
   "main": "dist/index.js",
   "types": "dist/index.d.ts"

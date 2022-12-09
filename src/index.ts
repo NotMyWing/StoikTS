@@ -413,55 +413,17 @@ export function evaluate(input: string | FIFO<TokenTuple>): TokenTuple {
 				switch (type) {
 					case TokenType.Subscript:
 						// If the operator is a subscript, check that the right operand is a number.
-						if (rightType !== TokenType.Number) {
-							throw new InvalidOperationError(
-								`Bad rhs operand for subscript (expected number, got ${rightType})`,
-								leftTuple,
-								rightTuple,
-								tuple,
-							);
-						}
-
-						switch (leftType) {
-							// If the left operand is an atom, create a new molecule using the atom and the subscript.
-							case TokenType.Atom:
-								const treemap = new TreeMap<string, number>();
-								treemap.set(left, right);
-
-								operandStack.push([TokenType.Molecule, treemap]);
-								break;
-
-							// If the left operand is a molecule, multiply the frequency of each atom by the subscript.
-							case TokenType.Molecule:
-								for (const [atom, frequency] of Array.from(left.entries())) left.set(atom, frequency * right);
-								operandStack.push([TokenType.Molecule, left]);
-								break;
-
-							default:
-								throw new InvalidOperationError(
-									`Bad lhs operand for subscript (expected atom or molecule, got ${TokenName[rightType]})`,
-									leftTuple,
-									rightTuple,
-									tuple,
-								);
-						}
-						break;
-
-					case TokenType.Coefficient:
-						console.log(`${TokenName[rightType]}`);
-
-						// If the operator is a coefficient, check that the left operand is a number.
 						if (leftType !== TokenType.Number) {
 							throw new InvalidOperationError(
-								`Bad lhs operand for coefficient (expected number, got ${TokenName[leftType]})`,
-								leftTuple,
+								`Bad rhs operand for subscript (expected number, got ${leftType})`,
 								rightTuple,
+								leftTuple,
 								tuple,
 							);
 						}
 
 						switch (rightType) {
-							// If the right operand is an atom, create a new molecule with the atom and the coefficient.
+							// If the left operand is an atom, create a new molecule using the atom and the subscript.
 							case TokenType.Atom:
 								const treemap = new TreeMap<string, number>();
 								treemap.set(right, left);
@@ -469,17 +431,53 @@ export function evaluate(input: string | FIFO<TokenTuple>): TokenTuple {
 								operandStack.push([TokenType.Molecule, treemap]);
 								break;
 
-							// If the right operand is a molecule, multiply the frequency of each atom by the coefficient.
+							// If the left operand is a molecule, multiply the frequency of each atom by the subscript.
 							case TokenType.Molecule:
-								right.forEach((frequency, atom) => right.set(atom, frequency * left));
+								for (const [atom, frequency] of Array.from(right.entries())) right.set(atom, frequency * left);
 								operandStack.push([TokenType.Molecule, right]);
 								break;
 
 							default:
 								throw new InvalidOperationError(
-									`Bad rhs operand for coefficient (expected atom or molecule, got ${TokenName[rightType]})`,
-									leftTuple,
+									`Bad lhs operand for subscript (expected atom or molecule, got ${TokenName[leftType]})`,
 									rightTuple,
+									leftTuple,
+									tuple,
+								);
+						}
+						break;
+
+					case TokenType.Coefficient:
+						// If the operator is a coefficient, check that the left operand is a number.
+						if (rightType !== TokenType.Number) {
+							throw new InvalidOperationError(
+								`Bad lhs operand for coefficient (expected number, got ${TokenName[rightType]})`,
+								rightTuple,
+								leftTuple,
+								tuple,
+							);
+						}
+
+						switch (leftType) {
+							// If the right operand is an atom, create a new molecule with the atom and the coefficient.
+							case TokenType.Atom:
+								const treemap = new TreeMap<string, number>();
+								treemap.set(left, right);
+
+								operandStack.push([TokenType.Molecule, treemap]);
+								break;
+
+							// If the right operand is a molecule, multiply the frequency of each atom by the coefficient.
+							case TokenType.Molecule:
+								left.forEach((frequency, atom) => left.set(atom, frequency * right));
+								operandStack.push([TokenType.Molecule, left]);
+								break;
+
+							default:
+								throw new InvalidOperationError(
+									`Bad rhs operand for coefficient (expected atom or molecule, got ${TokenName[leftType]})`,
+									rightTuple,
+									leftTuple,
 									tuple,
 								);
 						}
@@ -488,20 +486,20 @@ export function evaluate(input: string | FIFO<TokenTuple>): TokenTuple {
 					case TokenType.Subtract:
 					case TokenType.Join:
 					case TokenType.Add:
-						if (leftType !== TokenType.Molecule && leftType !== TokenType.Atom) {
+						if (rightType !== TokenType.Molecule && rightType !== TokenType.Atom) {
 							throw new InvalidOperationError(
-								`Bad lhs operand for ${TokenName[type]} (expected molecule or atom, got ${TokenName[leftType]})`,
-								leftTuple,
+								`Bad lhs operand for ${TokenName[type]} (expected molecule or atom, got ${TokenName[rightType]})`,
 								rightTuple,
+								leftTuple,
 								tuple,
 							);
 						}
 
-						if (rightType !== TokenType.Molecule && rightType !== TokenType.Atom) {
+						if (leftType !== TokenType.Molecule && leftType !== TokenType.Atom) {
 							throw new InvalidOperationError(
-								`Bad rhs operand for ${TokenName[type]} (expected molecule or atom, got ${TokenName[rightType]})`,
-								leftTuple,
+								`Bad rhs operand for ${TokenName[type]} (expected molecule or atom, got ${TokenName[leftType]})`,
 								rightTuple,
+								leftTuple,
 								tuple,
 							);
 						}
@@ -510,8 +508,8 @@ export function evaluate(input: string | FIFO<TokenTuple>): TokenTuple {
 
 						operandStack.push(
 							addOrSubtract(
-								leftTuple as unknown as MoleculeToken | AtomToken,
 								rightTuple as unknown as MoleculeToken | AtomToken,
+								leftTuple as unknown as MoleculeToken | AtomToken,
 								sign,
 							),
 						);
