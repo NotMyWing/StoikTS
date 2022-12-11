@@ -7,7 +7,7 @@
         "declaration": true,
         "outDir": "./dist",
         "esModuleInterop": true,
-        "importHelpers": false,
+        "importHelpers": true
     },
     "files": [
         "src/index.ts"
