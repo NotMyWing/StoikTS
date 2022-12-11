@@ -6,8 +6,7 @@
         "moduleResolution": "node",
         "declaration": true,
         "outDir": "./dist",
-        "esModuleInterop": true,
-        "importHelpers": true
+        "esModuleInterop": true
     },
     "files": [
         "src/index.ts"
