@@ -29,8 +29,9 @@
     "ts-treemap": "^1.1.0"
   },
   "license": "LGPLv3",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "name": "stoik",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts"
+  "types": "dist/index.d.ts",
+  "repository": "github:NotMyWing/StoikTS"
 }

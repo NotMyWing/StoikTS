@@ -1,11 +1,12 @@
 {
     "compilerOptions": {
-        "module": "umd",
+        "module": "ES2015",
         "sourceMap": true,
         "moduleResolution": "node",
         "declaration": true,
         "outDir": "./dist",
         "esModuleInterop": true,
+        "importHelpers": false,
     },
     "files": [
         "src/index.ts"
