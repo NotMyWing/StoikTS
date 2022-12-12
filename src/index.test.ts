@@ -1,4 +1,4 @@
-import FIFO from "fifo";
+import Denque from "denque";
 import { Molecule } from "./impl/Molecule";
 import { AnyEvaluatable, evaluate, MalformedFormulaError, tokenize, TokenName, TokenType, toRPN } from "./index";
 
@@ -169,6 +169,7 @@ describe(toRPN, () => {
 
 	it("should convert chemical equations with subscripts and coefficients to RPN", () => {
 		const tokens = toRPN(tokenize("2H2O2")).toArray();
+
 		expect(tokens).toEqual([
 			[TokenType.Number, 2],
 			[TokenType.Atom, "H"],
@@ -185,7 +186,7 @@ describe(toRPN, () => {
 
 describe("evaluate", () => {
 	it("should throw when receiving no value", () => {
-		expect(() => evaluate(FIFO())).toThrow();
+		expect(() => evaluate(new Denque())).toThrow();
 		expect(() => evaluate("")).toThrow();
 	});
 
@@ -329,7 +330,7 @@ describe("evaluate", () => {
 		}
 
 		function makeFIFO(...args: AnyEvaluatable[]) {
-			const output = FIFO<AnyEvaluatable>();
+			const output = new Denque<AnyEvaluatable>();
 			for (const arg of args) output.push(arg);
 
 			return output;

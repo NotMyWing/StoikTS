@@ -25,6 +25,7 @@
     "Exaxxion <11907282+Exaxxion@users.noreply.github.com>"
   ],
   "dependencies": {
+    "denque": "^2.1.0",
     "fifo": "^2.4.1",
     "tslib": "^2.4.1"
   },
@@ -34,5 +35,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": "github:NotMyWing/StoikTS",
-  "keywords": ["chemistry", "stoichiometry", "formula"]
+  "keywords": [
+    "chemistry",
+    "stoichiometry",
+    "formula"
+  ]
 }

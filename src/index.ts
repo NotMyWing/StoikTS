@@ -1,5 +1,5 @@
 import { AtomLiteral, Molecule } from "./impl/Molecule";
-import FIFO from "fifo";
+import Denque from "denque";
 
 /**
  * The type of a token.
@@ -77,14 +77,14 @@ export class MalformedFormulaError extends Error {
  * @param equation The chemical formula to tokenize.
  * @returns An array of token tuples.
  */
-export function tokenize(equation: string): FIFO<AnyToken> {
+export function tokenize(equation: string): Denque<AnyToken> {
 	const tokens = equation.split("");
 
 	let token: string;
 	let idx = 0;
 	let parens = 0;
 
-	const result = FIFO<AnyToken>();
+	const result = new Denque<AnyToken>();
 	function pushTuple(tuple: AnyToken) {
 		result.push(tuple);
 	}
@@ -96,7 +96,7 @@ export function tokenize(equation: string): FIFO<AnyToken> {
 			while ((token = tokens[++idx]) && /[0-9]/.test(token)) number.push(token);
 			const value = +number.join("");
 
-			const lastTuple = result.last();
+			const lastTuple = result.peekBack();
 			if (lastTuple && lastTuple[0] === TokenType.Number) {
 				pushTuple([TokenType.Subscript]);
 				pushTuple([TokenType.Number, value]);
@@ -118,7 +118,7 @@ export function tokenize(equation: string): FIFO<AnyToken> {
 		else if (/[A-Z]/.test(token)) {
 			const nextToken = tokens[idx + 1];
 
-			const lastTuple = result.last();
+			const lastTuple = result.peekBack();
 			if (lastTuple) {
 				const [lastType] = lastTuple;
 				if (lastType === TokenType.Number || lastType === TokenType.Atom || lastType === TokenType.GroupRight)
@@ -135,7 +135,7 @@ export function tokenize(equation: string): FIFO<AnyToken> {
 
 		// Group start.
 		else if (/\(/.test(token)) {
-			const lastTuple = result.last();
+			const lastTuple = result.peekBack();
 			if (lastTuple) {
 				const [lastType] = lastTuple;
 				if (lastType === TokenType.Number || lastType === TokenType.Atom || lastType === TokenType.GroupRight)
@@ -184,24 +184,25 @@ export function tokenize(equation: string): FIFO<AnyToken> {
  * @param formula The formula to convert.
  * @returns The RPN representation.
  */
-export function toRPN(formula: string): FIFO<AnyToken>;
+export function toRPN(formula: string): Denque<AnyToken>;
 
 /**
  * Converts a formula to the Reverse Polish Notation representation.
  * @param tokens The tokens to evaluate.
  * @returns The result of the formula.
  */
-export function toRPN(tokens: FIFO<AnyToken>): FIFO<AnyToken>;
+export function toRPN(tokens: Denque<AnyToken>): Denque<AnyToken>;
 
 /**
  * Converts a formula to the Reverse Polish Notation representation.
  * @param input The formula to evaluate.
  * @returns The result of the formula.
  */
-export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
+export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> {
 	if (typeof input === "string") input = tokenize(input);
+	else input = new Denque(input.toArray());
 
-	const output = FIFO<AnyToken>(),
+	const output = new Denque<AnyToken>(),
 		operatorStack: AnyToken[] = [];
 
 	const precedence = {
@@ -212,10 +213,10 @@ export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
 		[TokenType.Subtract]: 0,
 	};
 
-	let node = input.next();
-	const start = node;
 	while (true) {
-		const token = node.value;
+		const token = input.shift();
+		if (!token) break;
+
 		const [type] = token;
 
 		switch (type) {
@@ -225,7 +226,7 @@ export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
 				break;
 
 			case TokenType.GroupLeft:
-				operatorStack.push(node.value);
+				operatorStack.push(token);
 				break;
 
 			case TokenType.GroupRight:
@@ -240,17 +241,15 @@ export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
 			case TokenType.Subscript:
 			case TokenType.Subtract:
 				const prec = precedence[type];
+				console.log(TokenName[type], prec);
 
 				let top: AnyToken;
 				while ((top = operatorStack[operatorStack.length - 1]) && prec <= precedence[top[0]])
 					output.push(operatorStack.pop());
 
-				operatorStack.push(node.value);
+				operatorStack.push(token);
 				break;
 		}
-
-		node = node.next;
-		if (node === start) break;
 	}
 
 	let tuple: AnyToken;
@@ -271,24 +270,22 @@ export function evaluate(formula: string): AnyEvaluated;
  * @param tokens The tokens to evaluate.
  * @returns The result of the formula.
  */
-export function evaluate(tokens: FIFO<AnyEvaluatable>): AnyEvaluated;
+export function evaluate(tokens: Denque<AnyEvaluatable>): AnyEvaluated;
 
-export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyEvaluated {
+export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 	// If the input is a string, convert it to RPN.
 	if (typeof input === "string") input = toRPN(tokenize(input));
+	else input = new Denque(input.toArray());
 
 	if (input.isEmpty()) throw new Error("Empty input");
 
 	// Create a stack for operands.
-	const operandStack = FIFO<AnyEvaluatable>();
-
-	// Create a reference to the start of the input.
-	let node = input.next();
-	const start = node;
+	const operandStack = new Denque<AnyEvaluatable>();
 
 	// Loop until we reach the start of the input again.
 	while (true) {
-		const token = node.value;
+		const token = input.shift();
+		if (!token) break;
 
 		if (token instanceof Molecule) operandStack.push(token);
 		else {
@@ -410,9 +407,6 @@ export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyEvaluated {
 					break;
 			}
 		}
-
-		node = node.next;
-		if (node === start) break;
 	}
 
 	const evaluated = operandStack.pop() as unknown as AnyOperand;
