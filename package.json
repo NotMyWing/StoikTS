@@ -26,7 +26,6 @@
   ],
   "dependencies": {
     "fifo": "^2.4.1",
-    "ts-treemap": "^1.1.0",
     "tslib": "^2.4.1"
   },
   "license": "LGPLv3",

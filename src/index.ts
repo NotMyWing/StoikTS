@@ -40,14 +40,15 @@ export const TokenOp: Readonly<Record<TokenType, string>> = Object.freeze({
 	[TokenType.Join]: "j",
 });
 
-type NumberToken = [TokenType.Number, number];
-type AtomToken = [TokenType.Atom, AtomLiteral];
+export type NumberToken = [TokenType.Number, number];
+export type AtomToken = [TokenType.Atom, AtomLiteral];
 
-type AnyOperator = [Exclude<TokenType, TokenType.Number | TokenType.Atom>];
-type AnyToken = NumberToken | AtomToken | AnyOperator;
+export type AnyOperator = [Exclude<TokenType, TokenType.Number | TokenType.Atom>];
+export type AnyToken = NumberToken | AtomToken | AnyOperator;
 
-type AnyOperand = Molecule | AtomToken | NumberToken;
-type AnyEvaluatable = AnyOperator | AnyOperand;
+export type AnyOperand = Molecule | AtomToken | NumberToken;
+export type AnyEvaluatable = AnyOperator | AnyOperand;
+export type AnyEvaluated = Molecule | AtomLiteral | number;
 
 /**
  * An error thrown when a chemical formula is malformed.
@@ -66,40 +67,6 @@ export class MalformedFormulaError extends Error {
 	public constructor(message: string, index: number) {
 		super(message);
 		this.index = index;
-
-		Object.setPrototypeOf(this, MalformedFormulaError.prototype);
-	}
-}
-
-/**
- * An error thrown when an operator accepts invalid operands.
- */
-export class InvalidOperationError extends Error {
-	/**
-	 * The lhs operand that caused the error.
-	 */
-	public readonly lhs: AnyOperand;
-
-	/**
-	 * The lhs operand that caused the error.
-	 */
-	public readonly rhs: AnyOperand;
-
-	/**
-	 * The lhs operand that caused the error.
-	 */
-	public readonly operator: AnyOperator;
-
-	/**
-	 * Creates a new malformed formula error.
-	 * @param message The error message.
-	 * @param index The index of the token that caused the error.
-	 */
-	public constructor(message: string, lhs: AnyOperand, rhs: AnyOperand, operator: AnyOperator) {
-		super(message);
-		this.lhs = lhs;
-		this.rhs = rhs;
-		this.operator = operator;
 
 		Object.setPrototypeOf(this, MalformedFormulaError.prototype);
 	}
@@ -280,9 +247,6 @@ export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
 
 				operatorStack.push(node.value);
 				break;
-
-			default:
-				throw new Error(`Unknown token on the input stack: ${TokenName[type]}`);
 		}
 
 		node = node.next;
@@ -300,16 +264,16 @@ export function toRPN(input: string | FIFO<AnyToken>): FIFO<AnyEvaluatable> {
  * @param formula The formula to evaluate.
  * @returns The result of the formula.
  */
-export function evaluate(formula: string): AnyToken;
+export function evaluate(formula: string): AnyEvaluated;
 
 /**
  * Evaluates a formula.
  * @param tokens The tokens to evaluate.
  * @returns The result of the formula.
  */
-export function evaluate(tokens: FIFO<AnyEvaluatable>): AnyToken;
+export function evaluate(tokens: FIFO<AnyEvaluatable>): AnyEvaluated;
 
-export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyToken {
+export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyEvaluated {
 	// If the input is a string, convert it to RPN.
 	if (typeof input === "string") input = toRPN(tokenize(input));
 
@@ -444,9 +408,6 @@ export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyToken {
 					}
 
 					break;
-
-				default:
-					throw new Error(`Unknown token on the input stack: ${TokenName[operatorType]}`);
 			}
 		}
 
@@ -454,7 +415,11 @@ export function evaluate(input: string | FIFO<AnyEvaluatable>): AnyToken {
 		if (node === start) break;
 	}
 
-	const value = operandStack.pop() as unknown as AnyToken;
+	const evaluated = operandStack.pop() as unknown as AnyOperand;
+	if (!(evaluated instanceof Molecule)) {
+		const [, value] = evaluated;
+		return value;
+	}
 
-	return value;
+	return evaluated;
 }

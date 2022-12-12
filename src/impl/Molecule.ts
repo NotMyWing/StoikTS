@@ -36,14 +36,19 @@ export class Molecule extends Map<AtomLiteral, number> {
 	constructor();
 	constructor(atom: AtomLiteral, frequency?: number);
 	constructor(molecule: Molecule);
-	constructor(...args: [AtomLiteral, number?] | [Molecule]) {
+	constructor(atoms: [AtomLiteral, number?][]);
+	constructor(...args: [AtomLiteral, number?] | [Molecule] | [[AtomLiteral, number?][]]) {
 		const [rhs, rhsFreq = 1] = args;
 		const isString = typeof rhs === "string";
 
 		if (isString && rhsFreq !== 0) {
 			super();
 			this.set(rhs, rhsFreq);
-		} else if (!isString) super(rhs);
+		} else if (!isString) {
+			if (rhs instanceof Molecule) super(rhs);
+			else if (rhs) super(rhs.map(([atom, freq]) => [atom, freq ?? 1]));
+			else super();
+		}
 	}
 
 	static fromAtom(atom: AtomLiteral, frequency = 1) {
@@ -60,13 +65,11 @@ export class Molecule extends Map<AtomLiteral, number> {
 
 	private static addOrSubtractStatic(
 		lhs: Molecule,
-		subtract = false,
+		subtract: boolean,
 		...args: [AtomLiteral, number?] | [Molecule]
 	): Molecule {
 		const [rhs, rhsFreq = 1] = args;
 		const isString = typeof rhs === "string";
-
-		console.log(rhs, rhsFreq);
 
 		// If the right side is an atom, it's just get and set.
 		if (isString && rhsFreq !== 0) {

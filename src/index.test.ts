@@ -1,6 +1,6 @@
 import FIFO from "fifo";
-import TreeMap from "ts-treemap";
-import { evaluate, MalformedFormulaError, tokenize, TokenName, TokenTuple, TokenType, toRPN } from "./index";
+import { Molecule } from "./impl/Molecule";
+import { AnyEvaluatable, evaluate, MalformedFormulaError, tokenize, TokenName, TokenType, toRPN } from "./index";
 
 describe(tokenize, () => {
 	it("should throw on invalid characters", () => {
@@ -195,15 +195,11 @@ describe("evaluate", () => {
 
 	it("should evaluate chemical equations", () => {
 		const result = evaluate("H2O");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 2],
 				["O", 1],
 			]),
@@ -212,15 +208,11 @@ describe("evaluate", () => {
 
 	it("should evaluate chemical equations with subscripts", () => {
 		const result = evaluate("H2O2");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 2],
 				["O", 2],
 			]),
@@ -229,15 +221,11 @@ describe("evaluate", () => {
 
 	it("should evaluate chemical equations with subscripts and coefficients", () => {
 		const result = evaluate("2H2O2");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 4],
 				["O", 4],
 			]),
@@ -246,15 +234,11 @@ describe("evaluate", () => {
 
 	it("should evaluate chemical equations with parentheses", () => {
 		const result = evaluate("(H2O)2");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 4],
 				["O", 2],
 			]),
@@ -263,15 +247,11 @@ describe("evaluate", () => {
 
 	it("should evaluate chemical equations with parentheses and coefficients", () => {
 		const result = evaluate("2(H2O)2");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 8],
 				["O", 4],
 			]),
@@ -291,15 +271,11 @@ describe("evaluate", () => {
 
 	it("should evaluate complex chemical equations", () => {
 		const result = evaluate("5(H2O)3((FeW)5CrMo2V)6CoMnSi");
+
 		expect(result).toBeTruthy();
-
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(
-			new TreeMap([
+		expect(result).toBeInstanceOf(Molecule);
+		expect(result).toEqual(
+			new Molecule([
 				["H", 30],
 				["Co", 5],
 				["Cr", 30],
@@ -318,13 +294,9 @@ describe("evaluate", () => {
 		const result = evaluate("2(2C2(2(C)2)2(C)(C)(2C)((2(C2(2C)))2))(C2)2");
 
 		expect(result).toBeTruthy();
+		expect(result).toBeInstanceOf(Molecule);
 
-		if (!result) return;
-		const [type, value] = result;
-
-		expect(type).toBe(TokenType.Molecule);
-
-		expect(value).toEqual(new TreeMap([["C", 128]]));
+		expect(result).toEqual(new Molecule([["C", 128]]));
 	});
 
 	it("should treat explicit plus sign as different formulas", () => {
@@ -336,7 +308,7 @@ describe("evaluate", () => {
 	});
 
 	describe("operators", () => {
-		const exampleTokens: Record<TokenType, TokenTuple> = {
+		const exampleTokens: Record<TokenType, AnyEvaluatable> | Record<"molecule", Molecule> = {
 			[TokenType.GroupLeft]: [TokenType.GroupLeft],
 			[TokenType.GroupRight]: [TokenType.GroupRight],
 			[TokenType.Number]: [TokenType.Number, 2],
@@ -345,7 +317,7 @@ describe("evaluate", () => {
 			[TokenType.Atom]: [TokenType.Atom, "H"],
 			[TokenType.Coefficient]: [TokenType.Coefficient],
 			[TokenType.Subscript]: [TokenType.Subscript],
-			[TokenType.Molecule]: [TokenType.Molecule, new TreeMap<string, number>()],
+			["molecule"]: new Molecule(),
 			[TokenType.Join]: [TokenType.Join],
 		};
 
@@ -356,8 +328,8 @@ describe("evaluate", () => {
 			return ououtput;
 		}
 
-		function makeFIFO(...args: TokenTuple[]) {
-			const output = FIFO<TokenTuple>();
+		function makeFIFO(...args: AnyEvaluatable[]) {
+			const output = FIFO<AnyEvaluatable>();
 			for (const arg of args) output.push(arg);
 
 			return output;
@@ -365,7 +337,7 @@ describe("evaluate", () => {
 
 		const tokenPermutations = combine(Object.values(exampleTokens));
 		describe("add operand validity", () => {
-			const validTokens = new Set([exampleTokens[TokenType.Atom], exampleTokens[TokenType.Molecule]]);
+			const validTokens = new Set([exampleTokens[TokenType.Atom], exampleTokens["molecule"]]);
 
 			for (const [lhs, rhs] of tokenPermutations) {
 				const shouldPass = validTokens.has(lhs) && validTokens.has(rhs);
@@ -381,7 +353,7 @@ describe("evaluate", () => {
 
 		describe("subscript operand validity", () => {
 			for (const [lhs, rhs] of tokenPermutations) {
-				const shouldPass = (lhs[0] === TokenType.Atom || lhs[0] === TokenType.Molecule) && rhs[0] === TokenType.Number;
+				const shouldPass = (lhs[0] === TokenType.Atom || lhs instanceof Molecule) && rhs[0] === TokenType.Number;
 
 				it(
 					`subscription of ${TokenName[lhs[0]]} and ${TokenName[rhs[0]]} should ` + (shouldPass ? "pass" : "fail"),
@@ -397,7 +369,7 @@ describe("evaluate", () => {
 
 		describe("coefficient operand validity", () => {
 			for (const [lhs, rhs] of tokenPermutations) {
-				const shouldPass = lhs[0] === TokenType.Number && (rhs[0] === TokenType.Atom || rhs[0] === TokenType.Molecule);
+				const shouldPass = lhs[0] === TokenType.Number && (rhs[0] === TokenType.Atom || rhs instanceof Molecule);
 
 				it(
 					`coefficient of ${TokenName[lhs[0]]} and ${TokenName[rhs[0]]} should ` + (shouldPass ? "pass" : "fail"),
@@ -410,53 +382,5 @@ describe("evaluate", () => {
 				);
 			}
 		});
-	});
-});
-
-describe(TokenName[TokenType.Add], () => {
-	it("should work with any combinations of operands", () => {
-		const a = evaluate("A - 2A");
-		const b = evaluate("2A - A");
-		expect(a).not.toEqual(b);
-
-		const c = evaluate("A - A");
-		expect(c).toBeTruthy();
-
-		if (c) {
-			const [type, value] = c;
-			expect(type).toBe(TokenType.Molecule);
-			if (type !== TokenType.Molecule || !value) return;
-
-			expect(value.get("A")).toBeFalsy();
-		}
-	});
-
-	it("should subtract respecting associativity", () => {
-		const a = evaluate("A - 2A");
-		const b = evaluate("2A - A");
-		const c = evaluate("A - C");
-		const d = evaluate("C - A");
-
-		expect(a).toBeTruthy();
-		expect(b).toBeTruthy();
-		expect(c).toBeTruthy();
-		expect(d).toBeTruthy();
-		if (!a || !b || !c || !d) return;
-
-		expect(a).not.toEqual(b);
-		expect(a[1]).toEqual(new TreeMap([["A", -1]]));
-		expect(b[1]).toEqual(new TreeMap([["A", 1]]));
-		expect(c[1]).toEqual(
-			new TreeMap([
-				["A", 1],
-				["C", -1],
-			]),
-		);
-		expect(d[1]).toEqual(
-			new TreeMap([
-				["A", -1],
-				["C", 1],
-			]),
-		);
 	});
 });
