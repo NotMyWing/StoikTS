@@ -30,9 +30,10 @@
     "tslib": "^2.4.1"
   },
   "license": "LGPLv3",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "name": "stoik",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "repository": "github:NotMyWing/StoikTS"
+  "repository": "github:NotMyWing/StoikTS",
+  "keywords": ["chemistry", "stoichiometry", "formula"]
 }
