@@ -33,16 +33,21 @@ export type AtomLiteral = Uppercase<Letter> | `${Uppercase<Letter>}${Letter}`;
 const ATOM_LITERAL_TEST = /[A-Z][a-z]?/;
 
 export class Molecule extends Map<AtomLiteral, number> {
+	constructor();
 	constructor(atom: AtomLiteral, frequency?: number);
 	constructor(molecule: Molecule);
 	constructor(...args: [AtomLiteral, number?] | [Molecule]) {
-		const [rhs, rhsFreq = 0] = args;
+		const [rhs, rhsFreq = 1] = args;
 		const isString = typeof rhs === "string";
 
 		if (isString && rhsFreq !== 0) {
 			super();
 			this.set(rhs, rhsFreq);
 		} else if (!isString) super(rhs);
+	}
+
+	static fromAtom(atom: AtomLiteral, frequency = 1) {
+		return new Molecule(atom, frequency);
 	}
 
 	set(key: AtomLiteral, value: number): this {
@@ -53,13 +58,15 @@ export class Molecule extends Map<AtomLiteral, number> {
 		return this;
 	}
 
-	private static addOrSubtractMut(
+	private static addOrSubtractStatic(
 		lhs: Molecule,
 		subtract = false,
 		...args: [AtomLiteral, number?] | [Molecule]
 	): Molecule {
-		const [rhs, rhsFreq = 0] = args;
+		const [rhs, rhsFreq = 1] = args;
 		const isString = typeof rhs === "string";
+
+		console.log(rhs, rhsFreq);
 
 		// If the right side is an atom, it's just get and set.
 		if (isString && rhsFreq !== 0) {
@@ -88,7 +95,7 @@ export class Molecule extends Map<AtomLiteral, number> {
 	addMut(molecule: Molecule): this;
 	addMut(atom: AtomLiteral, freq?: number): this;
 	addMut(...args: [AtomLiteral, number?] | [Molecule]): this {
-		Molecule.addOrSubtractMut(this, false, ...args);
+		Molecule.addOrSubtractStatic(this, false, ...args);
 		return this;
 	}
 
@@ -96,14 +103,14 @@ export class Molecule extends Map<AtomLiteral, number> {
 	add(atom: AtomLiteral, freq?: number): Molecule;
 	add(...args: [AtomLiteral, number?] | [Molecule]): Molecule {
 		const molecule = new Molecule(this);
-		Molecule.addOrSubtractMut(molecule, false, ...args);
+		Molecule.addOrSubtractStatic(molecule, false, ...args);
 		return molecule;
 	}
 
 	subtractMut(molecule: Molecule): this;
 	subtractMut(atom: AtomLiteral, freq?: number): this;
 	subtractMut(...args: [AtomLiteral, number?] | [Molecule]): this {
-		Molecule.addOrSubtractMut(this, true, ...args);
+		Molecule.addOrSubtractStatic(this, true, ...args);
 		return this;
 	}
 
@@ -111,24 +118,28 @@ export class Molecule extends Map<AtomLiteral, number> {
 	subtract(atom: AtomLiteral, freq?: number): Molecule;
 	subtract(...args: [AtomLiteral, number?] | [Molecule]): Molecule {
 		const molecule = new Molecule(this);
-		Molecule.addOrSubtractMut(molecule, true, ...args);
+		Molecule.addOrSubtractStatic(molecule, true, ...args);
 		return molecule;
 	}
 
-	private static negateStatic(molecule) {
-		for (const [atom, freq] of molecule) molecule.set(atom, -freq);
+	private static multiplyStatic(molecule, multiplier: number) {
+		for (const [atom, freq] of molecule) molecule.set(atom, multiplier * freq);
 		return molecule;
 	}
 
 	negateMut(): this {
-		return Molecule.negateStatic(this);
+		return Molecule.multiplyStatic(this, -1);
 	}
 
 	negate(): Molecule {
-		return Molecule.negateStatic(new Molecule(this));
+		return Molecule.multiplyStatic(new Molecule(this), -1);
 	}
 
-	static fromAtom(atom: AtomLiteral, frequency = 1) {
-		return new Molecule(atom, frequency);
+	multiplyMut(multiplier: number): this {
+		return Molecule.multiplyStatic(this, multiplier);
+	}
+
+	multiply(multiplier: number): Molecule {
+		return Molecule.multiplyStatic(new Molecule(this), multiplier);
 	}
 }
