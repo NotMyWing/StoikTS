@@ -203,7 +203,7 @@ export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> 
 	else input = new Denque(input.toArray());
 
 	const output = new Denque<AnyToken>(),
-		operatorStack: AnyToken[] = [];
+		operatorStack = new Denque<AnyOperator>();
 
 	const precedence = {
 		[TokenType.Subscript]: 3,
@@ -230,7 +230,7 @@ export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> 
 				break;
 
 			case TokenType.GroupRight:
-				while (operatorStack[operatorStack.length - 1][0] !== TokenType.GroupLeft) output.push(operatorStack.pop());
+				while (operatorStack.peekBack()?.[0] !== TokenType.GroupLeft) output.push(operatorStack.pop());
 
 				operatorStack.pop();
 				break;
@@ -241,11 +241,9 @@ export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> 
 			case TokenType.Subscript:
 			case TokenType.Subtract:
 				const prec = precedence[type];
-				console.log(TokenName[type], prec);
 
 				let top: AnyToken;
-				while ((top = operatorStack[operatorStack.length - 1]) && prec <= precedence[top[0]])
-					output.push(operatorStack.pop());
+				while ((top = operatorStack.peekBack()) && prec <= precedence[top[0]]) output.push(operatorStack.pop());
 
 				operatorStack.push(token);
 				break;
