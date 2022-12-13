@@ -25,12 +25,10 @@
     "Exaxxion <11907282+Exaxxion@users.noreply.github.com>"
   ],
   "dependencies": {
-    "denque": "^2.1.0",
-    "fifo": "^2.4.1",
-    "tslib": "^2.4.1"
+    "denque": "^2.1.0"
   },
   "license": "LGPLv3",
-  "version": "0.0.12",
+  "version": "0.1.0",
   "name": "stoik",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

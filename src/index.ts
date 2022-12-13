@@ -111,7 +111,8 @@ export function tokenize(equation: string): Denque<AnyToken> {
 			} else if (lastTuple[0] === TokenType.Atom || lastTuple[0] === TokenType.GroupRight) {
 				pushTuple([TokenType.Subscript]);
 				pushTuple([TokenType.Number, value]);
-			} else throw new MalformedFormulaError(`Unexpected number after ${TokenName[lastTuple[0]]}`, idx);
+			} else
+				throw new MalformedFormulaError(`Unexpected number after ${TokenName[lastTuple[0]] ?? "unknown token"}`, idx);
 		}
 
 		// Atom.
@@ -189,14 +190,14 @@ export function toRPN(formula: string): Denque<AnyToken>;
 /**
  * Converts a formula to the Reverse Polish Notation representation.
  * @param tokens The tokens to evaluate.
- * @returns The result of the formula.
+ * @returns The RPN representation.
  */
 export function toRPN(tokens: Denque<AnyToken>): Denque<AnyToken>;
 
 /**
  * Converts a formula to the Reverse Polish Notation representation.
  * @param input The formula to evaluate.
- * @returns The result of the formula.
+ * @returns The RPN representation.
  */
 export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> {
 	if (typeof input === "string") input = tokenize(input);
@@ -261,16 +262,16 @@ export function toRPN(input: string | Denque<AnyToken>): Denque<AnyEvaluatable> 
  * @param formula The formula to evaluate.
  * @returns The result of the formula.
  */
-export function evaluate(formula: string): AnyEvaluated;
+export function evaluate(formula: string): Molecule;
 
 /**
  * Evaluates a formula.
  * @param tokens The tokens to evaluate.
  * @returns The result of the formula.
  */
-export function evaluate(tokens: Denque<AnyEvaluatable>): AnyEvaluated;
+export function evaluate(tokens: Denque<AnyEvaluatable>): Molecule;
 
-export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
+export function evaluate(input: string | Denque<AnyEvaluatable>): Molecule {
 	// If the input is a string, convert it to RPN.
 	if (typeof input === "string") input = toRPN(tokenize(input));
 	else input = new Denque(input.toArray());
@@ -303,10 +304,10 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 				case TokenType.Coefficient:
 				case TokenType.Subscript:
 				case TokenType.Join:
-					if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected rhs value, got none)");
+					if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected rhs value, got no value)");
 					const rightEvaluatable = operandStack.pop() as unknown as AnyEvaluatable;
 
-					if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected lhs value, got none)");
+					if (operandStack.isEmpty()) throw new Error("Unexpected end of input (expected lhs value, got no value)");
 					const leftEvaluatable = operandStack.pop() as unknown as AnyEvaluatable;
 
 					switch (operatorType) {
@@ -315,7 +316,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (!(leftEvaluatable instanceof Molecule) && leftEvaluatable[0] !== TokenType.Atom) {
 								throw new Error(
 									`Bad lhs operand for ${TokenName[operatorType]} (expected molecule or atom, got ${
-										TokenName[leftEvaluatable[0]]
+										TokenName[leftEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -324,7 +325,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (rightEvaluatable[0] !== TokenType.Number) {
 								throw new Error(
 									`Bad rhs operand for ${TokenName[operatorType]} (expected number, got ${
-										TokenName[rightEvaluatable[0]]
+										TokenName[rightEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -342,7 +343,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (leftEvaluatable[0] !== TokenType.Number) {
 								throw new Error(
 									`Bad rhs operand for ${TokenName[operatorType]} (expected number, got ${
-										TokenName[leftEvaluatable[0]]
+										TokenName[leftEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -351,7 +352,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (!(rightEvaluatable instanceof Molecule) && rightEvaluatable[0] !== TokenType.Atom) {
 								throw new Error(
 									`Bad lhs operand for ${TokenName[operatorType]} (expected molecule or atom, got ${
-										TokenName[rightEvaluatable[0]]
+										TokenName[rightEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -371,7 +372,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (!(leftEvaluatable instanceof Molecule) && leftEvaluatable[0] !== TokenType.Atom) {
 								throw new Error(
 									`Bad lhs operand for ${TokenName[operatorType]} (expected molecule or atom, got ${
-										TokenName[leftEvaluatable[0]]
+										TokenName[leftEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -380,7 +381,7 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 							if (!(rightEvaluatable instanceof Molecule) && rightEvaluatable[0] !== TokenType.Atom) {
 								throw new Error(
 									`Bad rhs operand for ${TokenName[operatorType]} (expected molecule or atom, got ${
-										TokenName[rightEvaluatable[0]]
+										TokenName[rightEvaluatable[0]] ?? "no value"
 									})`,
 								);
 							}
@@ -407,11 +408,11 @@ export function evaluate(input: string | Denque<AnyEvaluatable>): AnyEvaluated {
 		}
 	}
 
-	const evaluated = operandStack.pop() as unknown as AnyOperand;
+	const evaluated = (operandStack.pop() as unknown as AnyOperand) || undefined;
 	if (!(evaluated instanceof Molecule)) {
-		const [, value] = evaluated;
-		return value;
-	}
+		if (evaluated?.[0] === TokenType.Atom) return Molecule.fromAtom(evaluated[1]);
 
+		throw new Error(`Expected result to be instance of Molecule, got ${TokenName[evaluated?.[0]] || "no value"}`);
+	}
 	return evaluated;
 }
