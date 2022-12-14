@@ -1,6 +1,8 @@
 import { AtomLiteral, Molecule } from "./impl/Molecule";
 import Denque from "denque";
 
+export { Molecule } from "./impl/Molecule";
+
 /**
  * The type of a token.
  */
